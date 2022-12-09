@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "vscodevim.vim"
+        "vscodevim.vim",
+        "ms-python.black-formatter"
     ]
 }
