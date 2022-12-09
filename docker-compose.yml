@@ -46,8 +46,9 @@ services:
       - traefik.http.middlewares.${COMPOSE_IMAGE_NAME}-proxy-redirect.redirectregex.permanent=true
     volumes:
       - .:/app/${COMPOSE_IMAGE_NAME}:rw
-      # - /home/${USER}/.ssh:/home/${USER}/.ssh  # for sshd
-      # - /etc/ssh:/etc/ssh  # for sshd
+      - /home/${USER}/.gitconfig:/home/${USER}/.gitconfig  # for git
+      - /home/${USER}/.ssh:/home/${USER}/.ssh  # for sshd
+      - /etc/ssh:/etc/ssh  # for sshd
       - /var/run/docker.sock:/var/run/docker.sock  # for docker-in-docker
     command:
       - /bin/bash
