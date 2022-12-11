@@ -97,6 +97,7 @@ RUN OVERLAY_ARCH=$(uname -m) \
 COPY .devcontainer/rootfs/ /
 
 # Install code-server (from linuxserver/docker-code-server)
+ARG CODE_RELEASE=4.9.0
 RUN echo "**** install runtime dependencies ****" \
  && apt-get update \
  && apt-get install --no-install-suggests -y \
@@ -125,14 +126,24 @@ RUN echo "**** install runtime dependencies ****" \
     /var/tmp/*
 
 ARG COMPOSE_IMAGE_NAME=app
-RUN mkdir -p /etc/services.d/code-server /home/${USER}/code-server/extensions \
+RUN mkdir -p /etc/services.d/code-server \
  && set -x \
  && { \
     echo '#!/usr/bin/with-contenv bash'; \
     echo ''; \
+    echo "jq -rc '.recommendations[]' /app/${COMPOSE_IMAGE_NAME}/.vscode/extensions.json | while read i; do"; \
+    echo '  /app/code-server/bin/code-server \'; \
+    echo "  --extensions-dir /home/${USER}/code-server/extensions \\"; \
+    echo '  --install-extension ${i}'; \
+    echo 'done'; \
+    echo ''; \
+    echo '/app/code-server/bin/code-server \'; \
+    echo "--extensions-dir /home/${USER}/code-server/extensions \\"; \
+    echo "--install-extension /home/${USER}/code-server/extensions/github.copilot.vsix"; \
+    echo ''; \
     echo '/app/code-server/bin/code-server \'; \
     echo '--bind-addr 0.0.0.0:8443 \'; \
-    echo "--user-data-dir /home/${USER} \\"; \
+    echo "--user-data-dir /home/${USER}/code-server/config \\"; \
     echo "--extensions-dir /home/${USER}/code-server/extensions \\"; \
     echo '--disable-telemetry \'; \
     echo '--auth "none" \'; \
@@ -141,9 +152,13 @@ RUN mkdir -p /etc/services.d/code-server /home/${USER}/code-server/extensions \
  && chmod +x /etc/services.d/code-server/run \
  && cat /etc/services.d/code-server/run
 
+RUN mkdir -p /home/${USER}/code-server/extensions \
+ && curl -o /home/${USER}/code-server/extensions/github.copilot.vsix -L \
+   "https://github.gallery.vsassets.io/_apis/public/gallery/publisher/GitHub/extension/copilot/latest/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+
 EXPOSE 8443
 ENTRYPOINT [ "/init" ]
 
-# set working directory
+# Set working directory
 WORKDIR /app/${COMPOSE_IMAGE_NAME}
-ENV PATH /app/${COMPOSE_IMAGE_NAME}/node_modules/.bin:$PATH
+ENV PATH /home/${USER}/.local/bin:$PATH
